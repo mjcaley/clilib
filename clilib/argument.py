@@ -70,25 +70,27 @@ def _make_properties(keys, type=None):
 
 
 class ArgumentMetaClass(type):
-    def __new__(mcls, bases, dict, kwds):
-        print(f"attributes in {cls.__name__}")
+    def __new__(mcls, name, bases, namespace: dict[str, Any]):
+        print(f"attributes in {name}")
 
         arg_fields = {}
+        new_namespace = {"_arg_fields": {}}
         arg_names = set()
-        for key, value in attrs.items():
+        for key, value in namespace.items():
             if isinstance(value, Argument):
                 arg_names.add(key)
                 print(f"Adding {key}: {value} as argument")
                 internal_args = argument_to_internal(value)
                 arg_fields.update(internal_args)
-
+                properties = _make_properties(internal_args.keys())
+                new_namespace.update(properties)
+                new_namespace[f"_{key}"] = None  # Initialize the backing field
                 # Replace type annotation with option type
-                # Add internal option object to private dictionary
+            else:
+                new_namespace[key] = value
+        new_namespace["_arg_fields"].update(arg_fields)
 
-        cls._arg_attributes = arg_fields
-        properties = _make_properties(arg_names)
-        for ident, value in properties.items():
-            setattr(cls, ident, value)
+        cls = super().__new__(mcls, name, bases, new_namespace)
 
         return cls
 
