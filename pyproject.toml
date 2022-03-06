@@ -11,6 +11,12 @@ python = "^3.9"
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
 pytest-cov = "^3.0.0"
+mypy = "^0.931"
+pyright = "^1.1.226"
+black = "^22.1.0"
+
+[tool.mypy]
+plugins = ["clilib.mypy_plugin"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
