@@ -69,4 +69,4 @@ def get_subcommands(obj: Any) -> dict[str, Type]:
 
 
 def get_parameters(obj: Any) -> dict[str, Any]:
-    return getattr(obj, PARAMETERS)
+    return {name: getattr(obj, name) for name in getattr(obj, PARAMETERS).keys()}

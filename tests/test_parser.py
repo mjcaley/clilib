@@ -1,7 +1,12 @@
 import pytest
+from clilib.command import command
 
 from clilib.parameters import parameters, Argument, Option
-from clilib.parser import flatten_parameters, ParameterCollisionError
+from clilib.parser import (
+    flatten_command_parameters,
+    flatten_parameters,
+    ParameterCollisionError,
+)
 
 
 def test_flatten_single_parameters():
@@ -64,3 +69,42 @@ def test_flatten_raises_on_collision():
 
     with pytest.raises(ParameterCollisionError):
         flatten_parameters(parent)
+
+
+def test_flatten_command_parameters():
+    name_arg = Argument("NAME")
+
+    @parameters
+    class Person:
+        name: str = name_arg
+
+    @command
+    class Main:
+        person: Person
+
+    main = Main()
+    result = flatten_command_parameters(main)
+
+    assert main.person is result["NAME"].owner
+    assert "name" == result["NAME"].name
+    assert name_arg == result["NAME"].definition
+
+
+def test_flatten_command_parameters_collision():
+    @parameters
+    class Child:
+        name: str = Argument("NAME")
+
+    @parameters
+    class Parent:
+        name: str = Argument("NAME")
+
+    @command
+    class Main:
+        parent: Parent
+        child: Child
+
+    main = Main()
+
+    with pytest.raises(ParameterCollisionError):
+        flatten_command_parameters(main)

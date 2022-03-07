@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
+from .command import get_parameters
 from .parameters import Parameter, PARAMDEF, CHILDPARAM, is_parameters
 
 
@@ -30,7 +31,9 @@ def flatten_parameters(parameters: Any) -> dict[str, ParameterMapping]:
 
     for name, param in getattr(parameters, PARAMDEF).items():
         for param_name in param.names:
-            flattened_params[param_name] = ParameterMapping(owner=parameters, name=name, definition=param)
+            flattened_params[param_name] = ParameterMapping(
+                owner=parameters, name=name, definition=param
+            )
 
     for child_param_attr_name in getattr(parameters, CHILDPARAM).keys():
         child = getattr(parameters, child_param_attr_name)
@@ -41,3 +44,16 @@ def flatten_parameters(parameters: Any) -> dict[str, ParameterMapping]:
         flattened_params.update(child_params)
 
     return flattened_params
+
+
+def flatten_command_parameters(command: Any) -> dict[str, ParameterMapping]:
+    flattened_parameters = {}
+
+    for parameter in get_parameters(command).values():
+        parameters = flatten_parameters(parameter)
+        if collisions := parameters.keys() & flattened_parameters.keys():
+            raise ParameterCollisionError(collisions=collisions)
+
+        flattened_parameters.update(parameters)
+
+    return flattened_parameters
