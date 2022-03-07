@@ -65,8 +65,8 @@ def command(cls: Type = None, name: str = None):
 
 
 def get_subcommands(obj: Any) -> dict[str, Type]:
-    return {name: command_cls for name, command_cls in getattr(obj, SUBCOMMAND).items()}
+    return getattr(obj, SUBCOMMAND)
 
 
 def get_parameters(obj: Any) -> dict[str, Any]:
-    return {name: parameter for name, parameter in getattr(obj, PARAMETERS).items()}
+    return getattr(obj, PARAMETERS)

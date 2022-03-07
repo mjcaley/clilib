@@ -32,6 +32,11 @@ class Flag(Parameter):
 
 
 PARAMDEF = "_paramdef"
+CHILDPARAM = "_childparams"
+
+
+def is_parameters(obj: Any) -> bool:
+    return hasattr(obj, PARAMDEF)
 
 
 def param_init(self, *args, **kwargs):
@@ -40,6 +45,10 @@ def param_init(self, *args, **kwargs):
             setattr(self, name, kwargs[name])  # Set value from constructor
         elif value.default is not None:
             setattr(self, name, value.default)  # Set value from default
+    
+    # Instantiate child parameter groups
+    for name, type_ in getattr(self, CHILDPARAM).items():
+        setattr(self, name, type_())
 
 
 def parameters(cls: Type) -> Type:
@@ -48,6 +57,7 @@ def parameters(cls: Type) -> Type:
 
     # Future parameter definition
     parameters = {}
+    child_parameters = {}
 
     # Collect all the attribute names, values, and types
     annotations = get_type_hints(cls)
@@ -60,7 +70,7 @@ def parameters(cls: Type) -> Type:
     for name, item in attributes.items():
         type_, value = item
 
-        # Copy the parameter definition to the __paramdef__ dictionary
+        # Copy the parameter definition to the _paramdef dictionary
         # Assign the default value to the attribute
         # If there's no type annotation, make the default a string
         if isinstance(value, Parameter):
@@ -68,15 +78,13 @@ def parameters(cls: Type) -> Type:
             setattr(cls, name, None)
             annotations.setdefault(name, str)
 
-        # Instantiate child parameters
-        elif hasattr(type_, PARAMDEF):
-            setattr(cls, name, type_())
+        # Save child parameter groups
+        elif is_parameters(type_):
+            setattr(cls, name, None)
+            child_parameters[name] = type_
 
     setattr(cls, PARAMDEF, parameters)
+    setattr(cls, CHILDPARAM, child_parameters)
     setattr(cls, "__annotations__", annotations)
 
     return cls
-
-
-def is_parameters(obj: Any) -> bool:
-    return hasattr(obj, PARAMDEF)
