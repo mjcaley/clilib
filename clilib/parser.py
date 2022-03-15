@@ -123,7 +123,7 @@ class Parser:
 
     def parse_args(self, args: list[str] = None) -> Optional[Type]:
         if not args:
-            args = sys.argv
+            args = sys.argv[1:]
 
         next_command: Optional[Type] = None
         arg_iter = iter(self.arguments.values())
