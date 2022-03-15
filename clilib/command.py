@@ -1,34 +1,42 @@
 from __future__ import annotations
+from dataclasses import dataclass, field
 from typing import Any, Type, get_type_hints
 
 from .parameters import is_parameters
 
 
-SUBCOMMAND = "_subcommands"
-PARAMETERS = "_parameters"
-CONFIG = "_commandconfig"
+COMMANDMETA = "_command_meta_"
+
+
+@dataclass(frozen=True)
+class CommandMeta:
+    name: str
+    parameters: dict[str, Type]
+    subcommands: dict[str, Type] = field(default_factory=dict)
 
 
 def is_command(obj: Any) -> bool:
-    return hasattr(obj, SUBCOMMAND) and hasattr(obj, PARAMETERS)
+    return hasattr(obj, COMMANDMETA)
 
 
-def command_init(self, *args, **kwargs):
+def get_command_meta(command: Any) -> CommandMeta:
+    return getattr(command, COMMANDMETA)
+
+
+def command_init(self):
     """Command constructor. Instantiates the parameters and assigns them to the instance attributes."""
 
-    for param_name, param_cls in getattr(self, PARAMETERS).items():
+    meta = get_command_meta(self)
+    for param_name, param_cls in meta.parameters.items():
         setattr(self, param_name, param_cls())
 
 
 def command(cls: Type = None, name: str = None):
-    command_config = {"name": name}
+    command_name = name or cls.__name__.lower().replace("_", "-")
 
     def wrap(cls):
         # Command methods
         setattr(cls, "__init__", command_init)
-
-        # Configuration
-        setattr(cls, CONFIG, command_config)
 
         # Mappings to types
         parameters = {}
@@ -53,8 +61,8 @@ def command(cls: Type = None, name: str = None):
                 parameters[name] = type_
                 setattr(cls, name, None)
 
-        setattr(cls, SUBCOMMAND, sub_commands)
-        setattr(cls, PARAMETERS, parameters)
+        meta = CommandMeta(command_name, parameters, sub_commands)
+        setattr(cls, COMMANDMETA, meta)
 
         return cls
 
@@ -62,11 +70,3 @@ def command(cls: Type = None, name: str = None):
         return wrap
     else:
         return wrap(cls)
-
-
-def get_subcommands(obj: Any) -> dict[str, Type]:
-    return getattr(obj, SUBCOMMAND)
-
-
-def get_parameters(obj: Any) -> dict[str, Any]:
-    return {name: getattr(obj, name) for name in getattr(obj, PARAMETERS).keys()}

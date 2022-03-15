@@ -22,7 +22,9 @@ class CliGenMyPyPlugin(Plugin):
     #     if "parameters" in fullname:
     #         print(fullname)
 
-    def get_class_decorator_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
+    def get_class_decorator_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[ClassDefContext], None]]:
         if fullname == "clilib.parameters.parameters":
             print(fullname)
             return parameter_decorator_hook
@@ -56,8 +58,6 @@ def parameter_decorator_hook(ctx):
 
         # Not needed?
         node_type = get_proper_type(node.type)
-
-        
 
 
 # def parameter_attribute_hook(ctx):

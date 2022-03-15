@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Type, get_type_hints
+from typing import Any, Callable, Optional, Type, get_type_hints
 
 
 # region Parameter definitions
@@ -31,24 +31,40 @@ class Flag(Parameter):
 # endregion
 
 
-PARAMDEF = "_paramdef"
-CHILDPARAM = "_childparams"
+PARAMMETA = "_param_meta_"
+
+
+@dataclass
+class ParameterMeta:
+    option_defs: dict[str, Parameter]
+    argument_defs: dict[str, Parameter]
+    child_params: dict[str, Type]
+    name: Optional[str] = None
 
 
 def is_parameters(obj: Any) -> bool:
-    return hasattr(obj, PARAMDEF)
+    return hasattr(obj, PARAMMETA)
 
 
-def param_init(self, *args, **kwargs):
-    for name, value in getattr(self, PARAMDEF).items():
+def get_param_meta(parameters: Any) -> ParameterMeta:
+    return getattr(parameters, PARAMMETA)
+
+
+def param_init(self, *_, **kwargs):
+    meta = get_param_meta(self)
+
+    param_defs = {**meta.argument_defs, **meta.option_defs}
+
+    for name, value in param_defs.items():
         if name in kwargs:
             setattr(self, name, kwargs[name])  # Set value from constructor
         elif value.default is not None:
             setattr(self, name, value.default)  # Set value from default
-    
+
     # Instantiate child parameter groups
-    for name, type_ in getattr(self, CHILDPARAM).items():
-        setattr(self, name, type_())
+    for name, type_ in meta.child_params.items():
+        child = type_()
+        setattr(self, name, child)
 
 
 def parameters(cls: Type) -> Type:
@@ -56,10 +72,12 @@ def parameters(cls: Type) -> Type:
     setattr(cls, "__init__", param_init)
 
     # Future parameter definition
-    parameters = {}
+    options = {}
+    arguments = {}
     child_parameters = {}
 
     # Collect all the attribute names, values, and types
+    # TODO: Traverse MRO to get inherited members
     annotations = get_type_hints(cls)
     cls_vars = vars(cls)
     attributes = {
@@ -73,8 +91,12 @@ def parameters(cls: Type) -> Type:
         # Copy the parameter definition to the _paramdef dictionary
         # Assign the default value to the attribute
         # If there's no type annotation, make the default a string
-        if isinstance(value, Parameter):
-            parameters[name] = value
+        if isinstance(value, Option) or isinstance(value, Flag):
+            options[name] = value
+            setattr(cls, name, None)
+            annotations.setdefault(name, Optional[str])
+        elif isinstance(value, Argument):
+            arguments[name] = value
             setattr(cls, name, None)
             annotations.setdefault(name, str)
 
@@ -83,8 +105,8 @@ def parameters(cls: Type) -> Type:
             setattr(cls, name, None)
             child_parameters[name] = type_
 
-    setattr(cls, PARAMDEF, parameters)
-    setattr(cls, CHILDPARAM, child_parameters)
+    meta = ParameterMeta(options, arguments, child_parameters, name=None)
+    setattr(cls, PARAMMETA, meta)
     setattr(cls, "__annotations__", annotations)
 
     return cls

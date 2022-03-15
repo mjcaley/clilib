@@ -1,6 +1,13 @@
 import pytest
 
-from clilib.parameters import parameters, Option, Argument, Flag
+from clilib.parameters import (
+    Argument,
+    Flag,
+    Option,
+    get_param_meta,
+    is_parameters,
+    parameters,
+)
 
 
 @pytest.fixture
@@ -27,12 +34,27 @@ def test_argument(help_message):
 
 
 def test_flag(help_message):
-    f = Flag("-s", "--long", default = True, help=help_message)
+    f = Flag("-s", "--long", default=True, help=help_message)
 
     assert "-s" in f.names
     assert "--long" in f.names
     assert True is f.default
     assert help_message == f.help
+
+
+def test_is_parameter_true():
+    @parameters
+    class Blank:
+        ...
+
+    assert is_parameters(Blank)
+
+
+def test_is_parameters_false():
+    class Blank:
+        ...
+
+    assert not is_parameters(Blank)
 
 
 def test_parameter_defaults_set_when_instantiated():
@@ -46,7 +68,7 @@ def test_parameter_defaults_set_when_instantiated():
     assert None is Person.age
 
     p = Person()
-    
+
     # Default set after instantiation
     assert "Mike" == p.name
     assert 42 == p.age

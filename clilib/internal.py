@@ -19,7 +19,8 @@ class InternalParameters:
         params = [
             UserParameterDefinition(name, param_types[name], value)
             for name, value in vars(param).items()
-            if isinstance(value, Parameter)]
+            if isinstance(value, Parameter)
+        ]
 
         return cls(params)
 

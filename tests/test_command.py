@@ -1,57 +1,80 @@
-from clilib.command import command
-from clilib.parameters import parameters, Argument
+from clilib.command import CommandMeta, command, get_command_meta, is_command
+from clilib.parameters import Argument, parameters
 
 
-def test_internals_exist():
+def test_is_command_true():
     @command
-    class Main: ...
+    class Main:
+        ...
 
-    assert hasattr(Main, "_parameters")
-    assert hasattr(Main, "_subcommands")
-    assert hasattr(Main, "_commandconfig")
+    assert is_command(Main)
+
+
+def test_is_command_false():
+    class Main:
+        ...
+
+    assert not is_command(Main)
+
+
+def test_get_command_meta():
+    @command
+    class Main:
+        ...
+
+    result = get_command_meta(Main)
+
+    assert isinstance(result, CommandMeta)
 
 
 def test_subcommand_types_saved():
     @command
-    class Child: ...
-    
+    class Child:
+        ...
+
     @command
     class Main:
         child: Child
 
-    assert Child == Main._subcommands["child"]
+    assert Child == get_command_meta(Main).subcommands["child"]
 
 
 def test_parameter_type_saved():
     @parameters
-    class Param: ...
+    class Param:
+        ...
 
     @command
     class Main:
         param: Param
 
-    assert Param == Main._parameters["param"]
+    assert Param == get_command_meta(Main).parameters["param"]
 
 
 def test_default_configuration():
     @command
-    class Main: ...
+    class Command_Name:
+        ...
 
-    assert None is Main._commandconfig["name"]
+    assert (
+        Command_Name.__name__.lower().replace("_", "-")
+        == get_command_meta(Command_Name).name
+    )
 
 
 def test_set_name():
-    @command(name="main")
-    class Main: ...
+    @command(name="main-command")
+    class Main:
+        ...
 
-    assert "main" == Main._commandconfig["name"]
+    assert "main-command" == get_command_meta(Main).name
 
 
 def test_instantiate_with_parameters():
     @parameters
     class Person:
-        name: str = Argument("--name", "-n", default="Mike")    
-    
+        name: str = Argument("--name", "-n", default="Mike")
+
     @command
     class Main:
         person: Person

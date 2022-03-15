@@ -1,110 +1,266 @@
 import pytest
 from clilib.command import command
 
-from clilib.parameters import parameters, Argument, Option
+from clilib.command import command
+from clilib.parameters import Argument, Option, get_param_meta, parameters
 from clilib.parser import (
-    flatten_command_parameters,
-    flatten_parameters,
+    CommandParserContext,
     ParameterCollisionError,
+    Parser,
+    compile_command,
+    compile_definitions,
+    compile_parameters,
+    compile_parameter,
 )
 
 
-def test_flatten_single_parameters():
-    name_arg = Argument("NAME", default="Mike")
-    age_opt = Option("--age")
-
+def test_compile_definitions():
     @parameters
     class Person:
-        name = name_arg
-        age: int = age_opt
+        name: str = Option("--name")
+        age: int = Option("--age")
 
-    person = Person()
-    result = flatten_parameters(person)
+    p = Person()
+    meta = get_param_meta(p)
+    result = compile_definitions(p, meta.option_defs)
 
-    assert person is result["NAME"].owner
-    assert "name" == result["NAME"].name
-    assert name_arg == result["NAME"].definition
+    assert "--name" in result
+    assert "name" == result["--name"].name
+    assert p is result["--name"].owner
 
-    assert person is result["--age"].owner
+    assert "--age" in result
     assert "age" == result["--age"].name
-    assert age_opt == result["--age"].definition
+    assert p is result["--age"].owner
 
 
-def test_flatten_nested_parameters():
-    child_name = Option("--child-name")
-    parent_name = Option("--parent-name")
-
+def test_compile_definitions_with_argument_collision():
     @parameters
-    class Child:
-        name: str = child_name
+    class Person:
+        first_name: str = Argument("NAME")
+        last_name: str = Argument("NAME")
 
-    @parameters
-    class Parent:
-        name: str = parent_name
-        child: Child
-
-    parent = Parent()
-    result = flatten_parameters(parent)
-
-    assert parent is result["--parent-name"].owner
-    assert "name" == result["--parent-name"].name
-    assert parent_name == result["--parent-name"].definition
-
-    assert parent.child is result["--child-name"].owner
-    assert "name" == result["--child-name"].name
-    assert child_name == result["--child-name"].definition
-
-
-def test_flatten_raises_on_collision():
-    @parameters
-    class Child:
-        name: str = Argument("NAME")
-
-    @parameters
-    class Parent:
-        name: str = Argument("NAME")
-        child: Child
-
-    parent = Parent()
+    p = Person()
+    meta = get_param_meta(p)
 
     with pytest.raises(ParameterCollisionError):
-        flatten_parameters(parent)
+        compile_definitions(p, meta.argument_defs)
 
 
-def test_flatten_command_parameters():
-    name_arg = Argument("NAME")
+def test_compile_definitions_with_option_collision():
+    @parameters
+    class Person:
+        first_name: str = Option("--name")
+        last_name: str = Option("--name")
+
+    p = Person()
+    meta = get_param_meta(p)
+
+    with pytest.raises(ParameterCollisionError):
+        compile_definitions(p, meta.option_defs)
+
+
+def test_compile_parameter():
+    @parameters
+    class Person:
+        name: str = Argument("NAME")
+        age: int = Option("--age")
+
+    p = Person()
+    result = compile_parameter(p)
+
+    assert "NAME" in result.arguments
+    assert "name" == result.arguments["NAME"].name
+    assert p is result.arguments["NAME"].owner
+
+    assert "--age" in result.options
+    assert "age" == result.options["--age"].name
+    assert p is result.options["--age"].owner
+
+
+def test_compile_parameter_option_collision():
+    @parameters
+    class Person:
+        first_name: str = Option("--name")
+        last_name: str = Option("--name")
+
+    p = Person()
+
+    with pytest.raises(ParameterCollisionError):
+        compile_parameter(p)
+
+
+def test_compile_parameter_argument_collision():
+    @parameters
+    class Person:
+        first_name: str = Argument("NAME")
+        last_name: str = Argument("NAME")
+
+    p = Person()
+
+    with pytest.raises(ParameterCollisionError):
+        compile_parameter(p)
+
+
+def test_compile_parameter_child_collision():
+    @parameters
+    class Person:
+        name: str = Option("--name")
+
+    @parameters
+    class Family:
+        mother: Person
+        father: Person
+
+    f = Family()
+
+    with pytest.raises(ParameterCollisionError):
+        compile_parameter(f)
+
+
+def test_compile_parameters():
+    @parameters
+    class Parent:
+        name: str = Argument("PARENT_NAME")
+        age: int = Option("--parent-age")
+
+    @parameters
+    class Child:
+        name: str = Argument("CHILD_NAME")
+        age: int = Option("--child-age")
+
+    @parameters
+    class Family:
+        parent: Parent
+        child: Child
+
+    f = Family()
+    result = compile_parameters(f)
+
+    assert "PARENT_NAME" in result.arguments
+    assert "name" == result.arguments["PARENT_NAME"].name
+    assert f.parent is result.arguments["PARENT_NAME"].owner
+
+    assert "CHILD_NAME" in result.arguments
+    assert "name" == result.arguments["CHILD_NAME"].name
+    assert f.child is result.arguments["CHILD_NAME"].owner
+
+    assert "--parent-age" in result.options
+    assert "age" == result.options["--parent-age"].name
+    assert f.parent is result.options["--parent-age"].owner
+
+    assert "--child-age" in result.options
+    assert "age" == result.options["--child-age"].name
+    assert f.child is result.options["--child-age"].owner
+
+
+def test_compile_parameters_option_collision():
+    @parameters
+    class Person:
+        name: str = Option("--name")
+
+    p1 = Person()
+    p2 = Person()
+    
+    with pytest.raises(ParameterCollisionError):
+        compile_parameters(p1, p2)
+
+
+def test_compile_parameters_argument_collision():
+    @parameters
+    class Person:
+        name: str = Argument("NAME")
+
+    p1 = Person()
+    p2 = Person()
+    
+    with pytest.raises(ParameterCollisionError):
+        compile_parameters(p1, p2)
+
+
+def test_compile_command():
+    @command
+    class Subcommand: ...
 
     @parameters
     class Person:
-        name: str = name_arg
+        name: str = Argument("NAME")
+        age: int = Option("--age")
+
+    @command
+    class Family:
+        person: Person
+        subcommand: Subcommand
+
+    f = Family()
+    result = compile_command(f)
+
+    assert "NAME" in result.arguments
+    assert "--age" in result.options
+    assert "subcommand" in result.subcommands
+
+
+def test_parse_argument():
+    @parameters
+    class Person:
+        name: str = Argument("NAME")
 
     @command
     class Main:
         person: Person
 
-    main = Main()
-    result = flatten_command_parameters(main)
+    m = Main()
+    compiler_result = compile_command(m)
+    p = Parser(compiler_result.options, compiler_result.arguments, compiler_result.subcommands)
+    p.parse_args(["Mike"])
 
-    assert main.person is result["NAME"].owner
-    assert "name" == result["NAME"].name
-    assert name_arg == result["NAME"].definition
+    assert "Mike" == m.person.name
 
 
-def test_flatten_command_parameters_collision():
+def test_parse_option():
     @parameters
-    class Child:
-        name: str = Argument("NAME")
+    class Person:
+        age: int = Option("--age")
 
+    @command
+    class Main:
+        person: Person
+
+    m = Main()
+    compiler_result = compile_command(m)
+    p = Parser(compiler_result.options, compiler_result.arguments, compiler_result.subcommands)
+    p.parse_args(["--age", "42"])
+
+    assert "42" == m.person.age
+
+
+def test_parse_end_of_options():
     @parameters
-    class Parent:
+    class Person:
         name: str = Argument("NAME")
 
     @command
     class Main:
-        parent: Parent
+        person: Person
+
+    m = Main()
+    compiler_result = compile_command(m)
+    p = Parser(compiler_result.options, compiler_result.arguments, compiler_result.subcommands)
+    p.parse_args(["--", "Mike"])
+
+    assert "Mike" == m.person.name
+
+
+def test_parse_subcommand():
+    @command
+    class Child: ...
+
+    @command
+    class Main:
         child: Child
 
-    main = Main()
+    m = Main()
+    compiler_result = compile_command(m)
+    p = Parser(compiler_result.options, compiler_result.arguments, compiler_result.subcommands)
+    result = p.parse_args(["child"])
 
-    with pytest.raises(ParameterCollisionError):
-        flatten_command_parameters(main)
+    assert result is Child
