@@ -15,6 +15,10 @@ mypy = "^0.931"
 pyright = "^1.1.226"
 black = "^22.1.0"
 
+[tool.coverage.run]
+source = ["clilib"]
+branch = true
+
 [tool.mypy]
 plugins = ["clilib.mypy_plugin"]
 
