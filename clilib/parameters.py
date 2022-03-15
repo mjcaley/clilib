@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Type, get_type_hints
+from typing import Any, Optional, Type, get_type_hints
 
 
 # region Parameter definitions

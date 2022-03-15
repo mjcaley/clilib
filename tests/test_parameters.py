@@ -4,7 +4,6 @@ from clilib.parameters import (
     Argument,
     Flag,
     Option,
-    get_param_meta,
     is_parameters,
     parameters,
 )
