@@ -87,3 +87,20 @@ def test_child_parameter():
 
     assert isinstance(p.child, Child)
     assert "Kara" == p.child.name
+
+
+def test_inherited_parameters():
+    @parameters
+    class ParentName:
+        name: str = Argument("NAME", default="Mike")
+
+    @parameters
+    class ChildName:
+        name: str = Argument("NAME", default="Kara")
+
+    @parameters
+    class Person(ParentName, ChildName): ...
+
+    p = Person()
+
+    assert "Mike" == p.name

@@ -56,9 +56,7 @@ def param_init(self, *_, **kwargs):
     param_defs = {**meta.argument_defs, **meta.option_defs}
 
     for name, value in param_defs.items():
-        if name in kwargs:
-            setattr(self, name, kwargs[name])  # Set value from constructor
-        elif value.default is not None:
+        if value.default is not None:
             setattr(self, name, value.default)  # Set value from default
 
     # Instantiate child parameter groups
@@ -78,6 +76,12 @@ def parameters(cls: Type) -> Type:
 
     # Collect all the attribute names, values, and types
     # TODO: Traverse MRO to get inherited members
+    for mro_cls in reversed(cls.__mro__):
+        if is_parameters(mro_cls):
+            mro_meta = get_param_meta(mro_cls)
+            options.update(mro_meta.option_defs)
+            arguments.update(mro_meta.argument_defs)
+            child_parameters.update(mro_meta.child_params)
     annotations = get_type_hints(cls)
     cls_vars = vars(cls)
     attributes = {
