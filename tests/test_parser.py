@@ -41,7 +41,7 @@ def test_parse_option():
     )
     p.parse_args(["--age", "42"])
 
-    assert "42" == m.person.age
+    assert 42 == m.person.age
 
 
 def test_parse_end_of_options():

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Type
+from typing import Any, Type, get_type_hints
 
 from .command import get_command_meta
 from .parameters import Parameter, get_param_meta
@@ -20,7 +20,8 @@ class ParameterMapping:
     definition: Parameter
 
     def set(self, value: Any):
-        setattr(self.owner, self.name, value)
+        type_ = get_type_hints(self.owner)[self.name]
+        setattr(self.owner, self.name, type_(value))
 
 
 @dataclass(frozen=True)
