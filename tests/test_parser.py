@@ -1,18 +1,14 @@
-from clilib.command import command
-
-from clilib.command import command
+from clilib.command import Command
 from clilib.compiler import compile_command
-from clilib.parameters import Argument, Option, parameters
+from clilib.parameters import Argument, Option, Parameters
 from clilib.parser import Parser
 
 
 def test_parse_argument():
-    @parameters
-    class Person:
+    class Person(Parameters):
         name: str = Argument("NAME")
 
-    @command
-    class Main:
+    class Main(Command):
         person: Person
 
     m = Main()
@@ -26,12 +22,10 @@ def test_parse_argument():
 
 
 def test_parse_option():
-    @parameters
-    class Person:
+    class Person(Parameters):
         age: int = Option("--age")
 
-    @command
-    class Main:
+    class Main(Command):
         person: Person
 
     m = Main()
@@ -45,12 +39,10 @@ def test_parse_option():
 
 
 def test_parse_end_of_options():
-    @parameters
-    class Person:
+    class Person(Parameters):
         name: str = Argument("NAME")
 
-    @command
-    class Main:
+    class Main(Command):
         person: Person
 
     m = Main()
@@ -64,12 +56,10 @@ def test_parse_end_of_options():
 
 
 def test_parse_subcommand():
-    @command
-    class Child:
+    class Child(Command):
         ...
 
-    @command
-    class Main:
+    class Main(Command):
         child: Child
 
     m = Main()

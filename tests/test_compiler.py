@@ -7,13 +7,12 @@ from clilib.compiler import (
     compile_parameters,
     ParameterCollisionError,
 )
-from clilib.command import get_command_meta, command
-from clilib.parameters import get_param_meta, parameters, Argument, Option
+from clilib.command import get_command_meta, Command
+from clilib.parameters import get_param_meta, Parameters, Argument, Option
 
 
 def test_compile_definitions():
-    @parameters
-    class Person:
+    class Person(Parameters):
         name: str = Option("--name")
         age: int = Option("--age")
 
@@ -31,8 +30,7 @@ def test_compile_definitions():
 
 
 def test_compile_definitions_with_argument_collision():
-    @parameters
-    class Person:
+    class Person(Parameters):
         first_name: str = Argument("NAME")
         last_name: str = Argument("NAME")
 
@@ -44,8 +42,7 @@ def test_compile_definitions_with_argument_collision():
 
 
 def test_compile_definitions_with_option_collision():
-    @parameters
-    class Person:
+    class Person(Parameters):
         first_name: str = Option("--name")
         last_name: str = Option("--name")
 
@@ -57,8 +54,7 @@ def test_compile_definitions_with_option_collision():
 
 
 def test_compile_parameter():
-    @parameters
-    class Person:
+    class Person(Parameters):
         name: str = Argument("NAME")
         age: int = Option("--age")
 
@@ -75,8 +71,7 @@ def test_compile_parameter():
 
 
 def test_compile_parameter_option_collision():
-    @parameters
-    class Person:
+    class Person(Parameters):
         first_name: str = Option("--name")
         last_name: str = Option("--name")
 
@@ -87,8 +82,7 @@ def test_compile_parameter_option_collision():
 
 
 def test_compile_parameter_argument_collision():
-    @parameters
-    class Person:
+    class Person(Parameters):
         first_name: str = Argument("NAME")
         last_name: str = Argument("NAME")
 
@@ -99,12 +93,10 @@ def test_compile_parameter_argument_collision():
 
 
 def test_compile_parameter_child_collision():
-    @parameters
-    class Person:
+    class Person(Parameters):
         name: str = Option("--name")
 
-    @parameters
-    class Family:
+    class Family(Parameters):
         mother: Person
         father: Person
 
@@ -115,18 +107,15 @@ def test_compile_parameter_child_collision():
 
 
 def test_compile_parameters():
-    @parameters
-    class Parent:
+    class Parent(Parameters):
         name: str = Argument("PARENT_NAME")
         age: int = Option("--parent-age")
 
-    @parameters
-    class Child:
+    class Child(Parameters):
         name: str = Argument("CHILD_NAME")
         age: int = Option("--child-age")
 
-    @parameters
-    class Family:
+    class Family(Parameters):
         parent: Parent
         child: Child
 
@@ -151,8 +140,7 @@ def test_compile_parameters():
 
 
 def test_compile_parameters_option_collision():
-    @parameters
-    class Person:
+    class Person(Parameters):
         name: str = Option("--name")
 
     p1 = Person()
@@ -163,8 +151,7 @@ def test_compile_parameters_option_collision():
 
 
 def test_compile_parameters_argument_collision():
-    @parameters
-    class Person:
+    class Person(Parameters):
         name: str = Argument("NAME")
 
     p1 = Person()
@@ -175,17 +162,14 @@ def test_compile_parameters_argument_collision():
 
 
 def test_compile_command():
-    @command
-    class Subcommand:
+    class Subcommand(Command):
         ...
 
-    @parameters
-    class Person:
+    class Person(Parameters):
         name: str = Argument("NAME")
         age: int = Option("--age")
 
-    @command
-    class Family:
+    class Family(Command):
         person: Person
         subcommand: Subcommand
 
