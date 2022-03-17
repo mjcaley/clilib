@@ -43,7 +43,8 @@ def test_flag(help_message):
 
 
 def test_parameters_meta():
-    class Child(Parameters): ...
+    class Child(Parameters):
+        ...
 
     class Parent(Parameters):
         name: str = Argument("NAME")
@@ -62,7 +63,8 @@ def test_parameters_meta():
 
 
 def test_parameters_name():
-    class Parent(Parameters, name="mike"): ...
+    class Parent(Parameters, name="mike"):
+        ...
 
     meta = get_param_meta(Parent)
 
@@ -70,7 +72,8 @@ def test_parameters_name():
 
 
 def test_is_parameters_true():
-    class Blank(Parameters): ...
+    class Blank(Parameters):
+        ...
 
     b = Blank()
     result = is_parameters(b)
@@ -79,7 +82,8 @@ def test_is_parameters_true():
 
 
 def test_is_parameters_false():
-    class Blank: ...
+    class Blank:
+        ...
 
     b = Blank()
     result = is_parameters(b)
@@ -127,7 +131,8 @@ def test_inherited_parameters():
     class ChildName(Parameters):
         name: str = Argument("NAME", default="Kara")
 
-    class Person(ParentName, ChildName): ...
+    class Person(ParentName, ChildName):
+        ...
 
     p = Person()
 

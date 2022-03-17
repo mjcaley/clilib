@@ -16,7 +16,7 @@ class Parser:
         self.subcommands = subcommands
 
     def parse_args(self, args: list[str] = None) -> Optional[Type]:
-        if not args:
+        if args is None:
             args = sys.argv[1:]
 
         next_command: Optional[Type] = None
@@ -44,4 +44,4 @@ class Parser:
             current_arg = next(arg_iter)
             current_arg.set(current)
 
-        return next_command
+        return next_command, [arg for arg in arg_iter]

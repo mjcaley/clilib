@@ -2,6 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Type, cast, get_type_hints
 
+from clilib.context import Context
+
 from .parameters import is_parameters
 
 
@@ -24,6 +26,12 @@ def get_command_meta(command: Any) -> CommandMeta:
 
 
 class Command:
+    def __init__(self, context: Context):
+        self.context = context
+
+    def invoke(self) -> None:
+        pass
+
     def __init_subclass__(cls, /, name: str = None):
         if not name:
             name = cls.__name__.lower().replace("_", "-")
@@ -68,7 +76,9 @@ class Command:
             namespace[param_name] = param_cls()
 
         namespace[COMMANDMETA] = CommandMeta(meta.name, parameters, subcommands)
+        namespace["invoke"] = getattr(cls, "invoke")
+        namespace["__init__"] = getattr(cls, "__init__")
 
-        instance = type(meta.name, (object,), namespace, *args, **kwargs)
+        new_type = type(cls.__name__, (object,), namespace)
 
-        return cast(cls, instance)
+        return new_type.__new__(new_type, *args, **kwargs)

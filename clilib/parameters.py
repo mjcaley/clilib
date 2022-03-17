@@ -23,6 +23,7 @@ def get_param_meta(parameters: Any) -> ParameterMeta:
 
 # region Parameter definitions
 
+
 class Parameter:
     def __init__(self, *names: str, default=None, help: str = ""):
         self.names = names
@@ -112,7 +113,9 @@ class Parameters:
             child = type_()
             namespace[name] = child
 
-        namespace[PARAMMETA] = ParameterMeta(options, arguments, param_children, meta.name)
-        instance = type(cls.__name__, (object,), namespace, *args, **kwargs)
+        namespace[PARAMMETA] = ParameterMeta(
+            options, arguments, param_children, meta.name
+        )
+        instance = type(cls.__name__, (object,), namespace)
 
         return cast(cls, instance)
