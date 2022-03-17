@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Type, get_type_hints
+from typing import Any, Type, cast, get_type_hints
 
 from .parameters import is_parameters
 
@@ -71,4 +71,4 @@ class Command:
 
         instance = type(meta.name, (object,), namespace, *args, **kwargs)
 
-        return instance
+        return cast(cls, instance)
