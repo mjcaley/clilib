@@ -23,24 +23,13 @@ def get_command_meta(command: Any) -> CommandMeta:
     return getattr(command, COMMANDMETA)
 
 
-def command_init(self):
-    """Command constructor. Instantiates the parameters and assigns them to the instance attributes."""
+class Command:
+    def __init_subclass__(cls, /, name: str = None):
+        if not name:
+            name = cls.__name__.lower().replace("_", "-")
 
-    meta = get_command_meta(self)
-    for param_name, param_cls in meta.parameters.items():
-        setattr(self, param_name, param_cls())
-
-
-def command(cls: Type = None, name: str = None):
-    command_name = name or cls.__name__.lower().replace("_", "-")
-
-    def wrap(cls):
-        # Command methods
-        setattr(cls, "__init__", command_init)
-
-        # Mappings to types
         parameters = {}
-        sub_commands = {}
+        subcommands = {}
 
         annotations = get_type_hints(cls)
         cls_vars = vars(cls)
@@ -49,24 +38,37 @@ def command(cls: Type = None, name: str = None):
             for name in annotations.keys() | cls_vars.keys()
         }
 
-        for name, item in attributes.items():
+        for attr_name, item in attributes.items():
             type_, _ = item
 
             # Save the type for subcommands
             if is_command(type_):
-                sub_commands[name] = type_
-                setattr(cls, name, None)
+                subcommands[attr_name] = type_
             # Save the type for parameters
             elif is_parameters(type_):
-                parameters[name] = type_
-                setattr(cls, name, None)
+                parameters[attr_name] = type_
 
-        meta = CommandMeta(command_name, parameters, sub_commands)
+        meta = CommandMeta(name, parameters, subcommands)
         setattr(cls, COMMANDMETA, meta)
 
-        return cls
+    def __new__(cls, *args, **kwargs):
+        namespace = {}
+        meta = get_command_meta(cls)
 
-    if cls is None:
-        return wrap
-    else:
-        return wrap(cls)
+        parameters = {}
+        subcommands = {}
+        for mro_cls in reversed(cls.__mro__):
+            if not is_command(mro_cls):
+                continue
+            mro_meta = get_command_meta(mro_cls)
+            parameters.update(mro_meta.parameters)
+            subcommands.update(mro_meta.subcommands)
+
+        for param_name, param_cls in meta.parameters.items():
+            namespace[param_name] = param_cls()
+
+        namespace[COMMANDMETA] = CommandMeta(meta.name, parameters, subcommands)
+
+        instance = type(meta.name, (object,), namespace, *args, **kwargs)
+
+        return instance

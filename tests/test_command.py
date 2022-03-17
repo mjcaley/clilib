@@ -1,10 +1,9 @@
-from clilib.command import CommandMeta, command, get_command_meta, is_command
-from clilib.parameters import Argument, parameters
+from clilib.command import Command, CommandMeta, get_command_meta, is_command
+from clilib.parameters import Argument, Parameters
 
 
 def test_is_command_true():
-    @command
-    class Main:
+    class Main(Command):
         ...
 
     assert is_command(Main)
@@ -18,8 +17,7 @@ def test_is_command_false():
 
 
 def test_get_command_meta():
-    @command
-    class Main:
+    class Main(Command):
         ...
 
     result = get_command_meta(Main)
@@ -28,32 +26,27 @@ def test_get_command_meta():
 
 
 def test_subcommand_types_saved():
-    @command
-    class Child:
+    class Child(Command):
         ...
 
-    @command
-    class Main:
+    class Main(Command):
         child: Child
 
     assert Child == get_command_meta(Main).subcommands["child"]
 
 
 def test_parameter_type_saved():
-    @parameters
-    class Param:
+    class Param(Parameters):
         ...
 
-    @command
-    class Main:
+    class Main(Command):
         param: Param
 
     assert Param == get_command_meta(Main).parameters["param"]
 
 
 def test_default_configuration():
-    @command
-    class Command_Name:
+    class Command_Name(Command):
         ...
 
     assert (
@@ -63,20 +56,17 @@ def test_default_configuration():
 
 
 def test_set_name():
-    @command(name="main-command")
-    class Main:
+    class Main(Command, name="main-command"):
         ...
 
     assert "main-command" == get_command_meta(Main).name
 
 
 def test_instantiate_with_parameters():
-    @parameters
-    class Person:
+    class Person(Parameters):
         name: str = Argument("--name", "-n", default="Mike")
 
-    @command
-    class Main:
+    class Main(Command):
         person: Person
 
     main = Main()
