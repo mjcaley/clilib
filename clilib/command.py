@@ -76,6 +76,4 @@ class Command:
         for param_name, param_cls in meta.parameters.items():
             setattr(instance, param_name, param_cls())
 
-        instance.__init__(*args, **kwargs)
-
         return instance
