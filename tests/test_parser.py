@@ -4,14 +4,14 @@ from clilib.parameters import Argument, Option, Parameters
 from clilib.parser import Parser
 
 
-def test_parse_argument():
+def test_parse_argument(mocker):
     class Person(Parameters):
         name: str = Argument("NAME")
 
     class Main(Command):
         person: Person
 
-    m = Main()
+    m = Main(context=mocker.Mock())
     compiler_result = compile_command(m)
     p = Parser(
         compiler_result.options, compiler_result.arguments, compiler_result.subcommands
@@ -21,14 +21,14 @@ def test_parse_argument():
     assert "Mike" == m.person.name
 
 
-def test_parse_option():
+def test_parse_option(mocker):
     class Person(Parameters):
         age: int = Option("--age")
 
     class Main(Command):
         person: Person
 
-    m = Main()
+    m = Main(context=mocker.Mock())
     compiler_result = compile_command(m)
     p = Parser(
         compiler_result.options, compiler_result.arguments, compiler_result.subcommands
@@ -38,14 +38,14 @@ def test_parse_option():
     assert 42 == m.person.age
 
 
-def test_parse_end_of_options():
+def test_parse_end_of_options(mocker):
     class Person(Parameters):
         name: str = Argument("NAME")
 
     class Main(Command):
         person: Person
 
-    m = Main()
+    m = Main(context=mocker.Mock())
     compiler_result = compile_command(m)
     p = Parser(
         compiler_result.options, compiler_result.arguments, compiler_result.subcommands
@@ -55,14 +55,14 @@ def test_parse_end_of_options():
     assert "Mike" == m.person.name
 
 
-def test_parse_subcommand():
+def test_parse_subcommand(mocker):
     class Child(Command):
         ...
 
     class Main(Command):
         child: Child
 
-    m = Main()
+    m = Main(context=mocker.Mock())
     compiler_result = compile_command(m)
     p = Parser(
         compiler_result.options, compiler_result.arguments, compiler_result.subcommands

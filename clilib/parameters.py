@@ -88,7 +88,8 @@ class Parameters:
         setattr(cls, "__annotations__", annotations)
 
     def __new__(cls, *args, **kwargs):
-        namespace = dict(vars(cls))
+        instance = super().__new__(cls, *args, **kwargs)
+
         meta = get_param_meta(cls)
 
         options = {}
@@ -104,18 +105,13 @@ class Parameters:
 
         for name, value in {**arguments, **options}.items():
             if value.default:
-                namespace[name] = value.default  # Set value from default
+                setattr(instance, name, value.default)  # Set value from default
             else:
-                namespace[name] = None
+                setattr(instance, name, None)
 
         # Instantiate child parameter groups
         for name, type_ in param_children.items():
             child = type_()
-            namespace[name] = child
+            setattr(instance, name, child)
 
-        namespace[PARAMMETA] = ParameterMeta(
-            options, arguments, param_children, meta.name
-        )
-        instance = type(cls.__name__, (object,), namespace)
-
-        return cast(cls, instance)
+        return instance

@@ -60,7 +60,8 @@ class Command:
         setattr(cls, COMMANDMETA, meta)
 
     def __new__(cls, *args, **kwargs):
-        namespace = {}
+        instance = super().__new__(cls)
+
         meta = get_command_meta(cls)
 
         parameters = {}
@@ -73,12 +74,8 @@ class Command:
             subcommands.update(mro_meta.subcommands)
 
         for param_name, param_cls in meta.parameters.items():
-            namespace[param_name] = param_cls()
+            setattr(instance, param_name, param_cls())
 
-        namespace[COMMANDMETA] = CommandMeta(meta.name, parameters, subcommands)
-        namespace["invoke"] = getattr(cls, "invoke")
-        namespace["__init__"] = getattr(cls, "__init__")
+        instance.__init__(*args, **kwargs)
 
-        new_type = type(cls.__name__, (object,), namespace)
-
-        return new_type.__new__(new_type, *args, **kwargs)
+        return instance

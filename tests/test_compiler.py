@@ -161,7 +161,7 @@ def test_compile_parameters_argument_collision():
         compile_parameters(p1, p2)
 
 
-def test_compile_command():
+def test_compile_command(mocker):
     class Subcommand(Command):
         ...
 
@@ -173,7 +173,7 @@ def test_compile_command():
         person: Person
         subcommand: Subcommand
 
-    f = Family()
+    f = Family(context=mocker.Mock())
     result = compile_command(f)
 
     assert "NAME" in result.arguments

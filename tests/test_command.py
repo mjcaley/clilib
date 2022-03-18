@@ -62,13 +62,13 @@ def test_set_name():
     assert "main-command" == get_command_meta(Main).name
 
 
-def test_instantiate_with_parameters():
+def test_instantiate_with_parameters(mocker):
     class Person(Parameters):
         name: str = Argument("--name", "-n", default="Mike")
 
     class Main(Command):
         person: Person
 
-    main = Main()
+    main = Main(context=mocker.Mock())
 
     assert "Mike" == main.person.name

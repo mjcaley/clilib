@@ -14,6 +14,7 @@ pytest-cov = "^3.0.0"
 mypy = "^0.931"
 pyright = "^1.1.226"
 black = "^22.1.0"
+pytest-mock = "^3.7.0"
 
 [tool.coverage.run]
 source = ["clilib"]
