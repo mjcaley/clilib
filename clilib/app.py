@@ -39,7 +39,6 @@ class App:
             )
             next_command, remaining_args = parser.parse_args(remaining_args)
             command.invoke()
-            command = next_command
 
         if remaining_args:
             raise RemainingArguments(remaining_args)
