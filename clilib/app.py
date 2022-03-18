@@ -8,7 +8,9 @@ from .parser import Parser
 
 
 class RemainingArguments(Exception):
-    ...
+    def __init__(self, remaining_args: list[str]):
+        self.remaining_args = remaining_args
+        super().__init__(f"Unconsumed parameters: {remaining_args}")
 
 
 class App:
@@ -40,6 +42,6 @@ class App:
             command = next_command
 
         if remaining_args:
-            raise RemainingArguments()
+            raise RemainingArguments(remaining_args)
 
         sys.exit(context.exit_code)
