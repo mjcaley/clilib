@@ -67,6 +67,6 @@ def test_parse_subcommand():
     p = Parser(
         compiler_result.options, compiler_result.arguments, compiler_result.subcommands
     )
-    result = p.parse_args(["child"])
+    result, remaining_args = p.parse_args(["child"])
 
     assert result is Child
