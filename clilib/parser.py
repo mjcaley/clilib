@@ -44,4 +44,4 @@ class Parser:
             current_arg = next(arg_iter)
             current_arg.set(current)
 
-        return next_command, [arg for arg in arg_iter]
+        return next_command, [arg for arg in args]
