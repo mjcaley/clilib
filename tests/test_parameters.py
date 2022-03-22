@@ -1,6 +1,6 @@
 import pytest
 
-from clilib.parameters import (
+from heated.parameters import (
     Argument,
     Flag,
     FlatParameter,

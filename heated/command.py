@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Type, Union, get_type_hints
 
-from clilib.context import Context
+from heated.context import Context
 
 from .parameters import Parameters, is_parameters
 

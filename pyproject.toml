@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "clilib"
+name = "heated"
 version = "0.1.0"
-description = ""
+description = "Heated Arguments - another command line parser"
 authors = ["Michael Caley <mjcaley@darkarctic.com>"]
 license = "MIT"
 
@@ -17,11 +17,11 @@ black = "^22.1.0"
 pytest-mock = "^3.7.0"
 
 [tool.coverage.run]
-source = ["clilib"]
+source = ["heated"]
 branch = true
 
 [tool.mypy]
-plugins = ["clilib.mypy_plugin"]
+plugins = ["heated.mypy_plugin"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

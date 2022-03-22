@@ -1,5 +1,5 @@
-from clilib.command import Command, CommandMeta, get_command_meta, is_command
-from clilib.parameters import Argument, Parameters
+from heated.command import Command, CommandMeta, get_command_meta, is_command
+from heated.parameters import Argument, Parameters
 
 
 def test_is_command_true():

@@ -1,7 +1,7 @@
-from clilib.command import Command
-from clilib.compiler import compile_command
-from clilib.parameters import Argument, Flag, Option, Parameters
-from clilib.parser import Parser
+from heated.command import Command
+from heated.compiler import compile_command
+from heated.parameters import Argument, Flag, Option, Parameters
+from heated.parser import Parser
 
 
 def test_parse_option(mocker):

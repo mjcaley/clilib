@@ -1,6 +1,6 @@
-from clilib.parameters import Parameters, Argument, Option
-from clilib.command import Command
-from clilib.app import App
+from heated.parameters import Parameters, Argument, Option
+from heated.command import Command
+from heated.app import App
 
 
 class BranchParams(Parameters):

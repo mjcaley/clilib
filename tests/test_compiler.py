@@ -1,6 +1,6 @@
 import pytest
 
-from clilib.compiler import (
+from heated.compiler import (
     CompilerStore,
     CompilerStoreBool,
     CompilerArgument,
@@ -9,8 +9,8 @@ from clilib.compiler import (
     compile_parameters,
     ParameterCollisionError,
 )
-from clilib.command import Command
-from clilib.parameters import (
+from heated.command import Command
+from heated.parameters import (
     Flag,
     flatten_parameters,
     Parameters,

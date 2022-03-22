@@ -1,6 +1,6 @@
-from clilib.app import App
-from clilib.parameters import Parameters, Option, Argument
-from clilib.command import Command
+from heated.app import App
+from heated.parameters import Parameters, Option, Argument
+from heated.command import Command
 
 
 class Person(Parameters):
