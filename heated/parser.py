@@ -26,7 +26,6 @@ class Parser:
 
     def parse_argument(self, argument: CompilerArgument):
         self.parse_action(argument.action)
-        self.next_arg()
 
     def parse_option(self, option: CompilerOption):
         if isinstance(option.child, CompilerAction):
