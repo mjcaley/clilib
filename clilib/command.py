@@ -1,10 +1,10 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any, Type, cast, get_type_hints
+from typing import Any, Type, Union, get_type_hints
 
 from clilib.context import Context
 
-from .parameters import is_parameters
+from .parameters import Parameters, is_parameters
 
 
 COMMANDMETA = "_command_meta_"
@@ -13,16 +13,8 @@ COMMANDMETA = "_command_meta_"
 @dataclass(frozen=True)
 class CommandMeta:
     name: str
-    parameters: dict[str, Type]
+    parameters: dict[str, Type] = field(default_factory=dict)
     subcommands: dict[str, Type] = field(default_factory=dict)
-
-
-def is_command(obj: Any) -> bool:
-    return hasattr(obj, COMMANDMETA)
-
-
-def get_command_meta(command: Any) -> CommandMeta:
-    return getattr(command, COMMANDMETA)
 
 
 class Command:
@@ -40,15 +32,8 @@ class Command:
         subcommands = {}
 
         annotations = get_type_hints(cls)
-        cls_vars = vars(cls)
-        attributes = {
-            name: (annotations.get(name, None), cls_vars.get(name, None))
-            for name in annotations.keys() | cls_vars.keys()
-        }
 
-        for attr_name, item in attributes.items():
-            type_, _ = item
-
+        for attr_name, type_ in annotations.items():
             # Save the type for subcommands
             if is_command(type_):
                 subcommands[attr_name] = type_
@@ -77,3 +62,17 @@ class Command:
             setattr(instance, param_name, param_cls())
 
         return instance
+
+
+def is_command(obj: Any) -> bool:
+    return hasattr(obj, COMMANDMETA)
+
+
+def get_command_meta(command: Union[Command, Type]) -> CommandMeta:
+    return getattr(command, COMMANDMETA)
+
+
+def get_parameter_instances(command: Command) -> dict[str, Parameters]:
+    meta = get_command_meta(command)
+
+    return {attr_name: getattr(command, attr_name) for attr_name in meta.parameters}

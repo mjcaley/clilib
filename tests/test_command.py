@@ -69,6 +69,8 @@ def test_instantiate_with_parameters(mocker):
     class Main(Command):
         person: Person
 
-    main = Main(context=mocker.Mock())
+    context = mocker.Mock()
+    main = Main(context=context)
 
     assert "Mike" == main.person.name
+    assert context is main.context

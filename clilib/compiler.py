@@ -1,8 +1,14 @@
 from dataclasses import dataclass
-from typing import Any, Type, get_type_hints
+from typing import Any, Type, Union
 
-from .command import get_command_meta
-from .parameters import Parameter, get_param_meta
+from .command import Command, get_command_meta, get_parameter_instances
+from .parameters import (
+    Argument,
+    Flag,
+    FlatParameter,
+    Option,
+    flatten_parameters,
+)
 
 
 class ParameterCollisionError(Exception):
@@ -13,101 +19,96 @@ class ParameterCollisionError(Exception):
         super().__init__(message)
 
 
-@dataclass(frozen=True)
-class ParameterMapping:
-    owner: Any
-    name: str
-    definition: Parameter
-
+class CompilerAction:
     def set(self, value: Any):
-        type_ = get_type_hints(self.owner)[self.name]
-        setattr(self.owner, self.name, type_(value))
-
-
-@dataclass(frozen=True)
-class CommandParserContext:
-    options: dict[str, ParameterMapping]
-    arguments: list[ParameterMapping]
-    subcommands: dict[str, Type]
+        raise NotImplementedError
 
 
 @dataclass
-class ParameterCompilerResult:
-    options: dict[str, ParameterMapping]
-    arguments: dict[str, ParameterMapping]
+class CompilerStore(CompilerAction):
+    type_: Type
+    owner: Any
+    member_name: str
+
+    def set(self, value: Any):
+        setattr(self.owner, self.member_name, self.type_(value))
 
 
-def compile_definitions(
-    parameter: Any, definitions: dict[str, Parameter]
-) -> dict[str, ParameterMapping]:
-    result: dict[str, ParameterMapping] = {}
-    for attr_name, definition in definitions.items():
-        flattened_definitions = {
-            opt_str: ParameterMapping(parameter, attr_name, definition)
-            for opt_str in definition.names
-        }
-        if collision := result.keys() & flattened_definitions.keys():
-            raise ParameterCollisionError(
-                collision, f"Parameter redefined in {parameter.__class__.__name__}"
-            )
-        result.update(flattened_definitions)
+@dataclass
+class CompilerStoreBool(CompilerAction):
+    owner: Any
+    member_name: str
+    value: bool = True
 
-    return result
+    def set(self):
+        setattr(self.owner, self.member_name, self.value)
 
 
-def compile_parameter(parameter: Any) -> ParameterCompilerResult:
+@dataclass
+class CompilerArgument:
+    action: CompilerAction
+
+
+@dataclass
+class CompilerOption:
+    child: Union[CompilerAction, CompilerArgument]
+
+
+@dataclass
+class CompilerCommand:
+    options: dict[str, CompilerOption]
+    arguments: list[CompilerArgument]
+    subcommands: dict[str, Command]
+
+
+def compile_parameters(
+    definitions: tuple[FlatParameter],
+) -> tuple[list[CompilerArgument], dict[str, CompilerOption]]:
+    seen_names = set()
+
+    arguments = []
     options = {}
-    arguments = {}
 
-    meta = get_param_meta(parameter)
+    for definition in definitions:
+        if collision := seen_names & set(definition.parameter.names):
+            raise ParameterCollisionError(collision)
+        seen_names.update(definition.parameter.names)
 
-    # Compile inline options and arguments
-    inline_options = compile_definitions(parameter, meta.option_defs)
-    inline_arguments = compile_definitions(parameter, meta.argument_defs)
-
-    options.update(inline_options)
-    arguments.update(inline_arguments)
-
-    # Compile all child parameter groups
-    child_parameters = [getattr(parameter, pname) for pname in meta.child_params.keys()]
-    child_result = compile_parameters(*child_parameters)
-
-    options.update(child_result.options)
-    arguments.update(child_result.arguments)
-
-    return ParameterCompilerResult(options, arguments)
-
-
-def compile_parameters(*parameters: Any) -> ParameterCompilerResult:
-    options = {}
-    arguments = {}
-
-    for parameter in parameters:
-        result = compile_parameter(parameter)
-
-        if collision := result.options.keys() & options.keys():
-            raise ParameterCollisionError(
-                collision,
-                f"Option redefined in child of {parameter.__class__.__qualname__}",
+        if isinstance(definition.parameter, Argument):
+            action = CompilerStore(
+                definition.annotation, definition.owner, definition.member_name
             )
-
-        if collision := result.arguments.keys() & arguments.keys():
-            raise ParameterCollisionError(
-                collision,
-                f"Argument redefined from child in {parameter.__class__.__qualname__}",
+            argument = CompilerArgument(action=action)
+            arguments.append(argument)
+        elif isinstance(definition.parameter, Option):
+            action = CompilerStore(
+                definition.annotation, definition.owner, definition.member_name
             )
+            option = CompilerOption(child=action)
+            for name in definition.parameter.names:
+                options[name] = option
+        elif isinstance(definition.parameter, Flag):
+            action = CompilerStoreBool(
+                definition.owner,
+                definition.member_name,
+                not definition.parameter.default,
+            )
+            option = CompilerOption(action)
+            for name in definition.parameter.names:
+                options[name] = option
 
-        options.update(result.options)
-        arguments.update(result.arguments)
-
-    return ParameterCompilerResult(options, arguments)
+    return arguments, options
 
 
-def compile_command(command: Any) -> CommandParserContext:
-    meta = get_command_meta(command)
+def compile_command(command: Command) -> CompilerCommand:
+    command_meta = get_command_meta(command)
+    subcommands = {
+        get_command_meta(subcommand).name: subcommand
+        for subcommand in command_meta.subcommands.values()
+    }
 
-    subcommands = meta.subcommands
-    parameter_instances = [getattr(command, name) for name in meta.parameters.keys()]
-    parameters = compile_parameters(*parameter_instances)
+    parameter_instances = get_parameter_instances(command).values()
+    flattened_params = flatten_parameters(*parameter_instances)
+    arguments, options = compile_parameters(flattened_params)
 
-    return CommandParserContext(parameters.options, parameters.arguments, subcommands)
+    return CompilerCommand(options=options, arguments=arguments, subcommands=subcommands)

@@ -3,8 +3,10 @@ import pytest
 from clilib.parameters import (
     Argument,
     Flag,
+    FlatParameter,
     Option,
     Parameters,
+    flatten_parameters,
     get_param_meta,
     is_parameters,
 )
@@ -55,11 +57,11 @@ def test_parameters_meta():
     meta = get_param_meta(p)
 
     assert "parent" == meta.name
-    assert "name" in meta.argument_defs
-    assert Parent.name is meta.argument_defs["name"]
-    assert "age" in meta.option_defs
-    assert Parent.age is meta.option_defs["age"]
-    assert Child is meta.child_params["child"]
+    assert "name" in meta.definitions
+    assert Parent.name is meta.definitions["name"]
+    assert "age" in meta.definitions
+    assert Parent.age is meta.definitions["age"]
+    assert Child is meta.child_parameters["child"]
 
 
 def test_parameters_name():
@@ -137,3 +139,70 @@ def test_inherited_parameters():
     p = Person()
 
     assert "Mike" == p.name
+
+
+def test_flatten_parameters_single():
+    class Parent(Parameters):
+        name: str = Argument("NAME")
+        age: int = Option("--name")
+
+    p = Parent()
+    result = flatten_parameters(p)
+
+    assert p is result[0].owner
+    assert "name" == result[0].member_name
+    assert Parent.name is result[0].parameter
+
+    assert p is result[1].owner
+    assert "age" == result[1].member_name
+    assert Parent.age is result[1].parameter
+
+
+def test_flatten_parameters_multiple():
+    class Parent(Parameters):
+        name: str = Argument("PARENT_NAME")
+        age: int = Option("--parent-name")
+
+    class Child(Parameters):
+        name: str = Argument("CHILD_NAME")
+        age: int = Option("--child-name")
+
+    p = Parent()
+    c = Child()
+    result = flatten_parameters(p, c)
+
+    assert p is result[0].owner
+    assert "name" == result[0].member_name
+    assert Parent.name is result[0].parameter
+
+    assert p is result[1].owner
+    assert "age" == result[1].member_name
+    assert Parent.age is result[1].parameter
+
+    assert c is result[2].owner
+    assert "name" == result[2].member_name
+    assert Child.name is result[2].parameter
+
+    assert c is result[3].owner
+    assert "age" == result[3].member_name
+    assert Child.age is result[3].parameter
+
+
+def test_flatten_parameters_nested():
+    class Child(Parameters):
+        name: str = Argument("CHILD_NAME")
+        age: int = Option("--child-name")
+
+    class Parent(Parameters):
+        child: Child
+
+    p = Parent()
+    result = flatten_parameters(p)
+
+    assert p.child is result[0].owner
+    assert "name" == result[0].member_name
+    assert Child.name is result[0].parameter
+
+    assert p.child is result[1].owner
+    assert "age" == result[1].member_name
+    assert Child.age is result[1].parameter
