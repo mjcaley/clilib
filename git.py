@@ -1,11 +1,11 @@
-from heated.parameters import Parameters, Argument, Option
+from heated.parameters import Flag, Parameters, Argument, Option
 from heated.command import Command
 from heated.app import App
 
 
 class BranchParams(Parameters):
     branch = Argument("BRANCH_NAME")
-    list: bool = Option("--list", "-l")
+    list: bool = Flag("--list", "-l")
 
 
 class Branch(Command):
@@ -13,14 +13,14 @@ class Branch(Command):
 
     def invoke(self):
         if self.params.list:
-            print("git branch default option")
-        else:
             print("git branch list")
+        else:
+            print("git branch default option")
 
 
 class CheckoutParams(Parameters):
     branch = Argument("BRANCH")
-    new_branch: bool = Option("-b")
+    new_branch: bool = Flag("-b")
 
 
 class Checkout(Command):
@@ -35,8 +35,8 @@ class Checkout(Command):
 
 class CommitParams(Parameters):
     message: str = Option("-m")
-    amend: bool = Option("--amend")
-    squash: bool = Option("--squash")
+    amend: bool = Flag("--amend")
+    squash: bool = Flag("--squash")
 
 
 class Commit(Command):
