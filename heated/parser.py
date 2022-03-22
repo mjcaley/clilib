@@ -8,7 +8,7 @@ class Parser:
     def __init__(self, compiler_command: CompilerCommand, args: list[str]):
         self.compiler_command = compiler_command
         self._args_iter = iter(args)
-        self.current_arg = next(self._args_iter)
+        self.current_arg = None
 
     def next_arg(self) -> str:
         try:
@@ -38,6 +38,7 @@ class Parser:
         end_opts = False
         iter_compiler_arg = iter(self.compiler_command.arguments)
         next_command = None
+        self.next_arg()
 
         while self.current_arg:
             if self.current_arg == "--":

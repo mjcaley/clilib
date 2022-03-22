@@ -32,12 +32,7 @@ class App:
         while next_command is not None:
             command: Command = next_command(context=context)
             compiled_command = compile_command(command)
-            parser = Parser(
-                compiled_command.options,
-                compiled_command.arguments,
-                compiled_command.subcommands,
-            )
-            next_command, remaining_args = parser.parse_args(remaining_args)
+            next_command, remaining_args = Parser.parse_args(compiled_command, remaining_args)
             command.invoke()
 
         if remaining_args:
